@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+    <header>
+        <meta charset="utf-8">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
+        <link rel="stylesheet" href="styles.css">
+    </header>
+<body> 
+<form id="chat">
+<div class="username"></div>
+<div class="messages"></div>
+<input type="text" name="message" placeholder="escreva aqui">
+<button type="submit">Enviar</button>
+</form>
+
+<script type="text/javascript">
+var socket = io("http://localhost:3000")
+var user = JSON.parse(localStorage.getItem('user'))
+if (!user) $('.username').replaceWith('<input type="text" name="username" placeholder="escreva seu nome aqui">')
+if (user) $('.username').replaceWith('<div class="username">' + user.username + '</div>')
+function renderMessage(message) {
+    $('.messages').append('<div class="message"><strong>' + message.author +'</strong>: ' + message.message + '</div>')
+}
+
+socket.on('previousMessages', function(messages) {
+for (message of messages) {
+renderMessage(message)
+}
+})
+socket.on("receivedMessage", function(message) {
+renderMessage(message)
+})
+
+$('#chat').submit(function(event) {
+event.preventDefault();
+
+var author = localStorage.getItem('username') || $('input[name=username]').val();
+var message = $('input[name=message]').val();
+var user_id = Math.floor(Math.random() * 999999999)
+var obj = { user_id: user_id, username: author };
+if (author.length && message.length) {
+    var messageObject = {
+    author: author,
+    message: message,
+    };
+    localStorage.setItem('username', author)
+    localStorage.setItem('user', JSON.stringify(obj))
+    renderMessage(messageObject)
+    socket.emit("sendMessage", messageObject)
+    $('input[name=message]').val('')
+}
+})
+</script>
+</body>
+</html>
